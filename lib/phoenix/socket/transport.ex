@@ -248,7 +248,8 @@ defmodule Phoenix.Socket.Transport do
 
     connect_info =
       Enum.map(connect_info, fn
-        key when key in [:peer_data, :trace_context_headers, :uri, :user_agent, :x_headers] ->
+        # PATCH 1.5.9: provide the ORIGIN header as connect_info
+        key when key in [:peer_data, :trace_context_headers, :uri, :user_agent, :x_headers, :origin] ->
           key
 
         {:session, session} ->
@@ -461,6 +462,15 @@ defmodule Phoenix.Socket.Transport do
 
         {:session, session} ->
           {:session, connect_session(conn, endpoint, session)}
+
+        # PATCH 1.5.9: provide the ORIGIN header as connect_info
+        :origin ->
+          origin =
+            Plug.Conn.get_req_header(conn, "origin")
+            |> List.first("")
+            |> URI.parse()
+
+          {:origin, origin}
 
         {key, val} ->
           {key, val}
